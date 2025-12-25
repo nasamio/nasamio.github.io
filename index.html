@@ -3,51 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nasamio's Home</title>
+    <title>Nasamio's Space</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* --- 全局样式重置 --- */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        /* --- 基础设置 --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* 隐藏滚动条但允许滚动 */
+        body::-webkit-scrollbar { width: 8px; }
+        body::-webkit-scrollbar-track { background: #0f0c29; }
+        body::-webkit-scrollbar-thumb { background: #302b63; border-radius: 4px; }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #0f0c29;
             color: #fff;
-            overflow-x: hidden;
             height: 100vh;
+            overflow-x: hidden; /* 防止横向滚动 */
             position: relative;
         }
 
-        /* 粒子背景容器 */
         #particles-js {
-            position: absolute;
+            position: fixed;
             width: 100%;
             height: 100%;
             background: linear-gradient(to right, #24243e, #302b63, #0f0c29);
             z-index: -1;
-            cursor: pointer; /* 提示用户可以点击 */
         }
 
-        /* --- 主容器布局 --- */
-        .container {
-            position: relative;
-            z-index: 1;
+        /* --- 布局容器 --- */
+        /* 初始状态：Flex 居中 */
+        .layout-container {
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
+            align-items: center;
             min-height: 100vh;
-            padding: 20px;
-            pointer-events: none; /* 让鼠标穿透容器直接点击到背景 */
+            padding: 40px;
+            transition: all 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            max-width: 1400px;
+            margin: 0 auto;
         }
 
-        /* --- 玻璃拟态卡片 --- */
+        /* --- 激活状态（动画后）：靠左上角 --- */
+        .layout-container.active {
+            justify-content: flex-start; /* 水平靠左 */
+            align-items: flex-start;     /* 垂直靠上 */
+            padding-top: 60px;
+            gap: 40px; /* 侧边栏和文章的间距 */
+        }
+
+        /* --- 个人卡片 (侧边栏) --- */
         .glass-card {
-            pointer-events: auto; /* 恢复卡片内容的点击 */
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
@@ -55,19 +61,41 @@
             border: 1px solid rgba(255, 255, 255, 0.18);
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
             padding: 40px;
-            max-width: 800px;
+
+            /* 初始大小 */
             width: 100%;
+            max-width: 600px;
             text-align: center;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            margin-bottom: 20px;
+
+            /* 动画属性 */
+            transition: all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+            flex-shrink: 0; /* 防止被挤压 */
+            position: relative; /* 确保层级 */
+            z-index: 10;
         }
 
-        .glass-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px 0 rgba(0, 0, 0, 0.5);
+        /* 激活后的卡片样式 (缩小) */
+        .layout-container.active .glass-card {
+            max-width: 320px; /* 变窄 */
+            padding: 30px 20px;
+            position: sticky; /* 变成粘性侧边栏 */
+            top: 40px;
         }
 
-        /* --- 头像区域 --- */
+        /* 激活后头像变小 */
+        .layout-container.active .avatar {
+            width: 80px;
+            height: 80px;
+            border-width: 2px;
+        }
+
+        /* 激活后标题变小 */
+        .layout-container.active h1 { font-size: 1.5rem; }
+        .layout-container.active .typing-text { font-size: 0.9rem; margin-bottom: 15px;}
+        .layout-container.active .stat-number { font-size: 1.2rem; }
+        .layout-container.active .skills { display: none; } /* 侧边栏模式隐藏技能标签，太挤 */
+        .layout-container.active .quote-section { font-size: 0.8rem; }
+
         .avatar {
             width: 120px;
             height: 120px;
@@ -75,121 +103,104 @@
             border: 4px solid rgba(255,255,255,0.3);
             margin-bottom: 20px;
             object-fit: cover;
-            animation: pulse 2s infinite;
+            transition: all 0.5s ease;
         }
 
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4); }
-            70% { box-shadow: 0 0 0 15px rgba(255, 255, 255, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
-        }
-
-        /* --- 标题与文字 --- */
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-        }
-
-        .typing-text {
-            font-size: 1.2rem;
-            color: #00d2ff;
-            margin-bottom: 30px;
-            height: 24px;
-        }
+        h1 { margin-bottom: 10px; transition: all 0.5s; }
+        .typing-text { color: #00d2ff; margin-bottom: 30px; height: 24px; transition: all 0.5s;}
 
         /* --- 技能标签 --- */
         .skills {
             display: flex;
             justify-content: center;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 8px;
             margin-bottom: 30px;
+            opacity: 1;
+            transition: opacity 0.5s;
         }
-
         .skill-tag {
             background: rgba(255, 255, 255, 0.15);
-            padding: 8px 16px;
+            padding: 6px 12px;
             border-radius: 20px;
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: background 0.3s;
+            font-size: 0.85rem;
         }
 
-        .skill-tag:hover {
-            background: rgba(255, 255, 255, 0.3);
-            cursor: default;
-        }
-
-        /* --- 动态数据统计 --- */
+        /* --- 数据统计 --- */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 20px;
-            width: 100%;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
         }
-
-        .stat-item {
-            background: rgba(0, 0, 0, 0.2);
-            padding: 15px;
-            border-radius: 15px;
-        }
-
-        .stat-number {
-            font-size: 1.8rem;
-            font-weight: bold;
-            color: #4facfe;
-        }
-
-        .stat-label {
-            font-size: 0.9rem;
-            color: #ccc;
-        }
-
-        /* --- 每日一言 --- */
-        .quote-section {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            font-style: italic;
-            color: #e0e0e0;
-        }
-
-        .quote-content {
-            font-size: 1.1rem;
-            margin-bottom: 5px;
-        }
-
-        .quote-author {
-            font-size: 0.8rem;
-            color: #aaa;
-            text-align: right;
-        }
+        .stat-item { background: rgba(0,0,0,0.2); padding: 10px; border-radius: 10px; }
+        .stat-number { font-size: 1.5rem; font-weight: bold; color: #4facfe; transition: font-size 0.5s;}
+        .stat-label { font-size: 0.7rem; color: #ccc; }
 
         /* --- 社交链接 --- */
-        .social-links {
-            margin-top: 20px;
+        .social-links a { color: white; font-size: 1.2rem; margin: 0 10px; transition: 0.3s; }
+        .social-links a:hover { color: #00d2ff; }
+
+        /* --- 文章列表区域 (右侧) --- */
+        #article-section {
+            flex-grow: 1;
+            display: none; /* 初始隐藏 */
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 0.8s ease;
+            max-width: 800px;
         }
 
-        .social-links a {
-            color: white;
-            font-size: 1.5rem;
-            margin: 0 15px;
-            transition: color 0.3s, transform 0.3s;
-            display: inline-block;
+        .layout-container.active #article-section {
+            display: block; /* 激活显示 */
+            opacity: 1;
+            transform: translateY(0);
         }
 
-        .social-links a:hover {
-            color: #00d2ff;
-            transform: scale(1.2);
+        /* 文章卡片样式 */
+        .article-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            transition: transform 0.3s, background 0.3s;
+            cursor: pointer;
         }
 
-        /* --- 响应式 --- */
-        @media (max-width: 600px) {
-            h1 { font-size: 2rem; }
-            .glass-card { padding: 20px; }
+        .article-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #00d2ff;
+        }
+
+        .article-title { font-size: 1.4rem; font-weight: bold; margin-bottom: 10px; color: #fff; }
+        .article-desc { color: #ccc; font-size: 0.95rem; line-height: 1.6; margin-bottom: 15px; }
+
+        .article-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        .tag { color: #00d2ff; background: rgba(0, 210, 255, 0.1); padding: 2px 8px; border-radius: 4px; }
+
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            .layout-container.active {
+                flex-direction: column;
+                align-items: center;
+                padding-top: 20px;
+            }
+            .layout-container.active .glass-card {
+                position: relative;
+                top: 0;
+                width: 100%;
+                max-width: 100%;
+            }
+            #article-section { width: 100%; }
         }
     </style>
 </head>
@@ -197,26 +208,24 @@
 
 <div id="particles-js"></div>
 
-<div class="container">
-    <div class="glass-card">
+<div class="layout-container" id="main-layout">
+
+    <aside class="glass-card" onclick="forceActivateLayout()">
         <img id="github-avatar" src="https://github.com/github.png" alt="Avatar" class="avatar">
 
-        <h1 id="github-name">你好 👋</h1>
-
+        <h1 id="github-name">Nasamio</h1>
         <div class="typing-text" id="typing-text"></div>
 
         <div class="skills">
-            <span class="skill-tag"><i class="fab fa-android"></i> Android</span>
-            <span class="skill-tag"><i class="fas fa-code"></i> Kotlin</span>
-            <span class="skill-tag"><i class="fas fa-layer-group"></i> Compose</span>
-            <span class="skill-tag"><i class="fab fa-python"></i> Python</span>
-            <span class="skill-tag"><i class="fab fa-java"></i> Java</span>
+            <span class="skill-tag">Kotlin</span>
+            <span class="skill-tag">Compose</span>
+            <span class="skill-tag">Android</span>
         </div>
 
         <div class="stats-grid">
             <div class="stat-item">
                 <div class="stat-number" id="repo-count">-</div>
-                <div class="stat-label">公开仓库</div>
+                <div class="stat-label">Repos</div>
             </div>
             <div class="stat-item">
                 <div class="stat-number" id="followers-count">-</div>
@@ -224,112 +233,175 @@
             </div>
             <div class="stat-item">
                 <div class="stat-number">2025</div>
-                <div class="stat-label">活跃年份</div>
+                <div class="stat-label">Year</div>
             </div>
         </div>
 
         <div class="quote-section">
-            <p class="quote-content" id="hitokoto-text">正在连接灵感...</p>
-            <p class="quote-author" id="hitokoto-author"></p>
+            <p id="hitokoto-text" style="margin-bottom:5px">Loading...</p>
+            <p id="hitokoto-author" style="text-align:right; color:#aaa; font-size:0.8em"></p>
         </div>
 
-        <div class="social-links">
-            <a href="https://github.com/nasamio" target="_blank" title="GitHub" id="git-link"><i class="fab fa-github"></i></a>
-            <a href="mailto:nasamio@163.com" title="Email"><i class="fas fa-envelope"></i></a>
-            <a href="#" title="Blog"><i class="fas fa-rss"></i></a>
+        <div class="social-links" style="margin-top: 20px;">
+            <a href="https://github.com/nasamio" target="_blank" id="git-link"><i class="fab fa-github"></i></a>
+            <a href="mailto:nasamio@163.com"><i class="fas fa-envelope"></i></a>
         </div>
-    </div>
+    </aside>
+
+    <main id="article-section">
+        <h2 style="margin-bottom: 20px; font-size: 1.5rem; border-left: 4px solid #00d2ff; padding-left: 10px;">最新博客</h2>
+        <div id="article-list-container">
+        </div>
+    </main>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-
 <script>
-    // ================= 配置区域 =================
-    const GITHUB_USERNAME = "nasamio"; // 已设置为您的用户名
-    // ===========================================
+    const GITHUB_USERNAME = "nasamio";
 
-    // 1. 初始化粒子背景
+    // --- 1. 粒子背景 ---
     particlesJS("particles-js", {
         "particles": {
-            "number": { "value": 80, "density": { "enable": true, "value_area": 800 } },
+            "number": { "value": 60 },
             "color": { "value": "#ffffff" },
-            "shape": { "type": "circle" },
-            "opacity": { "value": 0.5, "random": false },
-            "size": { "value": 3, "random": true },
-            "line_linked": { "enable": true, "distance": 150, "color": "#ffffff", "opacity": 0.4, "width": 1 },
-            "move": { "enable": true, "speed": 3, "direction": "none", "random": false, "straight": false, "out_mode": "out", "bounce": false }
+            "size": { "value": 3 },
+            "line_linked": { "enable": true, "opacity": 0.3 },
+            "move": { "speed": 2 }
         },
         "interactivity": {
-            "detect_on": "canvas", // 确保在 canvas 上检测点击
-            "events": {
-                "onhover": { "enable": true, "mode": "repulse" }, // 鼠标悬停排斥
-                "onclick": { "enable": true, "mode": "push" },    // 鼠标点击添加粒子
-                "resize": true
-            },
-            "modes": {
-                "repulse": { "distance": 100, "duration": 0.4 },
-                "push": { "particles_nb": 4 } // 每次点击增加4个粒子
-            }
-        },
-        "retina_detect": true
+            "events": { "onhover": { "enable": true, "mode": "repulse" }, "onclick": { "enable": true, "mode": "push" } }
+        }
     });
 
-    // 2. 打字机效果
-    const texts = ["Kotlin 全栈开发者", "Android & Compose 爱好者", "Talk is cheap. Show me the code."];
-    let count = 0;
-    let index = 0;
-    let currentText = "";
-    let letter = "";
-
+    // --- 2. 打字机 ---
+    const texts = ["Kotlin Developer", "Compose Magic", "Hello World!"];
+    let count = 0, index = 0, currentText = "", letter = "";
     (function type() {
-        if (count === texts.length) {
-            count = 0;
-        }
+        if (count === texts.length) count = 0;
         currentText = texts[count];
         letter = currentText.slice(0, ++index);
-
         document.getElementById('typing-text').textContent = letter;
-
         if (letter.length === currentText.length) {
-            count++;
-            index = 0;
-            setTimeout(type, 2000);
+            count++; index = 0; setTimeout(type, 2000);
         } else {
             setTimeout(type, 100);
         }
     })();
 
-    // 3. GitHub 数据获取
-    async function fetchGitHubData() {
+    // --- 3. 核心功能：布局切换动画 ---
+    let isLayoutActive = false;
+
+    function activateLayout() {
+        if (isLayoutActive) return;
+        isLayoutActive = true;
+
+        const layout = document.getElementById('main-layout');
+        layout.classList.add('active');
+
+        // 渲染文章列表
+        renderFakeArticles();
+    }
+
+    // 提供一个手动点击触发的方法 (备用)
+    function forceActivateLayout() {
+        activateLayout();
+    }
+
+    // --- 4. 生成假数据文章 ---
+    function renderFakeArticles() {
+        const articles = [
+            {
+                title: "使用 Jetpack Compose 构建跨平台桌面应用",
+                desc: "探讨 Compose Multiplatform 在 Desktop 端的实际应用，从窗口管理到原生 API 调用。",
+                date: "2025-12-24",
+                tag: "Compose Desktop"
+            },
+            {
+                title: "Kotlin 协程最佳实践指南",
+                desc: "深入理解 CoroutineScope、SupervisorJob 以及 Flow 在 Android 开发中的异常处理机制。",
+                date: "2025-12-20",
+                tag: "Kotlin"
+            },
+            {
+                title: "重构：从 View 体系迁移到 Compose",
+                desc: "记录一个老旧 Android 项目完全迁移到 Compose 的心路历程与踩坑实录。",
+                date: "2025-12-15",
+                tag: "Android"
+            },
+            {
+                title: "自定义 View 进阶：Canvas 粒子特效",
+                desc: "如何在 Android Canvas 上高性能绘制 5000+ 粒子动画并保持 60fps。",
+                date: "2025-12-10",
+                tag: "UI/UX"
+            },
+            {
+                title: "Ktor + Docker：快速部署微服务",
+                desc: "使用纯 Kotlin 技术栈编写后端服务，并使用 Docker 容器化部署到云服务器。",
+                date: "2025-12-05",
+                tag: "Backend"
+            },
+            {
+                title: "S57 电子海图解析初探",
+                desc: "基于 Kotlin 解析 S57 格式标准，绘制基础的矢量海图数据。",
+                date: "2025-12-01",
+                tag: "Map"
+            }
+        ];
+
+        const container = document.getElementById('article-list-container');
+        container.innerHTML = ""; // 清空
+
+        // 逐个插入，带一点延迟动画
+        articles.forEach((art, i) => {
+            setTimeout(() => {
+                const html = `
+                        <div class="article-card">
+                            <div class="article-title">${art.title}</div>
+                            <div class="article-desc">${art.desc}</div>
+                            <div class="article-meta">
+                                <span><i class="far fa-calendar-alt"></i> ${art.date}</span>
+                                <span class="tag"># ${art.tag}</span>
+                            </div>
+                        </div>
+                    `;
+                container.innerHTML += html;
+            }, i * 200); // 阶梯式渲染
+        });
+    }
+
+    // --- 5. 数据加载与自动触发 ---
+    async function loadData() {
         try {
-            const response = await fetch(`https://api.github.com/users/${GITHUB_USERNAME}`);
-            if (response.ok) {
-                const data = await response.json();
+            // GitHub
+            const gitRes = await fetch(`https://api.github.com/users/${GITHUB_USERNAME}`);
+            if (gitRes.ok) {
+                const data = await gitRes.json();
                 document.getElementById('github-avatar').src = data.avatar_url;
                 document.getElementById('github-name').textContent = data.name || GITHUB_USERNAME;
                 document.getElementById('repo-count').textContent = data.public_repos;
                 document.getElementById('followers-count').textContent = data.followers;
                 document.getElementById('git-link').href = data.html_url;
             }
-        } catch (error) {
-            console.error("GitHub API Error:", error);
+
+            // Hitokoto
+            const hitoRes = await fetch('https://v1.hitokoto.cn/?c=i&c=d');
+            const hitoData = await hitoRes.json();
+            document.getElementById('hitokoto-text').textContent = hitoData.hitokoto;
+            document.getElementById('hitokoto-author').textContent = `—— ${hitoData.from}`;
+
+        } catch (e) {
+            console.log(e);
+        } finally {
+            // 核心逻辑：无论数据成功与否，等待 1.5秒 后触发动画
+            setTimeout(() => {
+                activateLayout();
+            }, 1500);
         }
     }
 
-    // 4. 一言 API
-    async function fetchHitokoto() {
-        try {
-            const response = await fetch('https://v1.hitokoto.cn/?c=i&c=d');
-            const data = await response.json();
-            document.getElementById('hitokoto-text').textContent = `"${data.hitokoto}"`;
-            document.getElementById('hitokoto-author').textContent = `—— ${data.from_who || '佚名'} · 《${data.from}》`;
-        } catch (error) {
-            document.getElementById('hitokoto-text').textContent = "保持渴望，保持愚蠢。";
-        }
-    }
+    loadData();
 
-    fetchGitHubData();
-    fetchHitokoto();
 </script>
 </body>
 </html>
