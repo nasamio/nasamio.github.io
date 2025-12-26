@@ -9,30 +9,39 @@
         /* --- 基础设置 --- */
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        /* 隐藏滚动条但允许滚动 */
         body::-webkit-scrollbar { width: 8px; }
-        body::-webkit-scrollbar-track { background: #0f0c29; }
-        body::-webkit-scrollbar-thumb { background: #302b63; border-radius: 4px; }
+        body::-webkit-scrollbar-track { background: #1a1a1a; }
+        body::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #0f0c29;
             color: #fff;
             height: 100vh;
-            overflow-x: hidden; /* 防止横向滚动 */
+            overflow-x: hidden;
             position: relative;
+
+            /* --- 这里修改背景图 --- */
+            /* 1. background-image: 这里的 URL 可以换成您仓库里的图片路径，例如 './bg.jpg' */
+            /* 2. background-attachment: fixed; 确保滚动时图片不动 */
+            background-image: url('https://s2.loli.net/2025/12/26/fGk6NP8I15eEqDh.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
         }
 
-        #particles-js {
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(to right, #24243e, #302b63, #0f0c29);
+        /* --- 黑色遮罩层 --- */
+        /* 为了防止背景图太亮导致文字看不清，加一层半透明黑膜 */
+        body::before {
+            content: "";
+            position: fixed; /* 也是固定的 */
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(15, 12, 41, 0.7); /* 0.7 是透明度 */
             z-index: -1;
         }
 
         /* --- 布局容器 --- */
-        /* 初始状态：Flex 居中 */
         .layout-container {
             display: flex;
             justify-content: center;
@@ -44,56 +53,46 @@
             margin: 0 auto;
         }
 
-        /* --- 激活状态（动画后）：靠左上角 --- */
         .layout-container.active {
-            justify-content: flex-start; /* 水平靠左 */
-            align-items: flex-start;     /* 垂直靠上 */
+            justify-content: flex-start;
+            align-items: flex-start;
             padding-top: 60px;
-            gap: 40px; /* 侧边栏和文章的间距 */
+            gap: 40px;
         }
 
-        /* --- 个人卡片 (侧边栏) --- */
+        /* --- 玻璃拟态卡片 --- */
         .glass-card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.05); /* 更加通透一点 */
+            backdrop-filter: blur(15px); /* 毛玻璃模糊度加强 */
+            -webkit-backdrop-filter: blur(15px);
             border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
             padding: 40px;
 
-            /* 初始大小 */
             width: 100%;
             max-width: 600px;
             text-align: center;
 
-            /* 动画属性 */
             transition: all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
-            flex-shrink: 0; /* 防止被挤压 */
-            position: relative; /* 确保层级 */
+            flex-shrink: 0;
+            position: relative;
             z-index: 10;
         }
 
-        /* 激活后的卡片样式 (缩小) */
         .layout-container.active .glass-card {
-            max-width: 320px; /* 变窄 */
+            max-width: 320px;
             padding: 30px 20px;
-            position: sticky; /* 变成粘性侧边栏 */
+            position: sticky;
             top: 40px;
+            background: rgba(0, 0, 0, 0.3); /* 侧边栏模式稍微深一点 */
         }
 
-        /* 激活后头像变小 */
-        .layout-container.active .avatar {
-            width: 80px;
-            height: 80px;
-            border-width: 2px;
-        }
-
-        /* 激活后标题变小 */
+        .layout-container.active .avatar { width: 80px; height: 80px; border-width: 2px; }
         .layout-container.active h1 { font-size: 1.5rem; }
         .layout-container.active .typing-text { font-size: 0.9rem; margin-bottom: 15px;}
         .layout-container.active .stat-number { font-size: 1.2rem; }
-        .layout-container.active .skills { display: none; } /* 侧边栏模式隐藏技能标签，太挤 */
+        .layout-container.active .skills { display: none; }
         .layout-container.active .quote-section { font-size: 0.8rem; }
 
         .avatar {
@@ -106,10 +105,9 @@
             transition: all 0.5s ease;
         }
 
-        h1 { margin-bottom: 10px; transition: all 0.5s; }
-        .typing-text { color: #00d2ff; margin-bottom: 30px; height: 24px; transition: all 0.5s;}
+        h1 { margin-bottom: 10px; transition: all 0.5s; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .typing-text { color: #00d2ff; margin-bottom: 30px; height: 24px; transition: all 0.5s; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
 
-        /* --- 技能标签 --- */
         .skills {
             display: flex;
             justify-content: center;
@@ -124,27 +122,26 @@
             padding: 6px 12px;
             border-radius: 20px;
             font-size: 0.85rem;
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
-        /* --- 数据统计 --- */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 10px;
             margin-bottom: 20px;
         }
-        .stat-item { background: rgba(0,0,0,0.2); padding: 10px; border-radius: 10px; }
+        .stat-item { background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px; }
         .stat-number { font-size: 1.5rem; font-weight: bold; color: #4facfe; transition: font-size 0.5s;}
         .stat-label { font-size: 0.7rem; color: #ccc; }
 
-        /* --- 社交链接 --- */
         .social-links a { color: white; font-size: 1.2rem; margin: 0 10px; transition: 0.3s; }
         .social-links a:hover { color: #00d2ff; }
 
-        /* --- 文章列表区域 (右侧) --- */
+        /* --- 文章列表区域 --- */
         #article-section {
             flex-grow: 1;
-            display: none; /* 初始隐藏 */
+            display: none;
             opacity: 0;
             transform: translateY(50px);
             transition: all 0.8s ease;
@@ -152,15 +149,14 @@
         }
 
         .layout-container.active #article-section {
-            display: block; /* 激活显示 */
+            display: block;
             opacity: 1;
             transform: translateY(0);
         }
 
-        /* 文章卡片样式 */
         .article-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(5px);
+            background: rgba(20, 20, 20, 0.6); /* 稍微深一点的背景，增加对比度 */
+            backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 15px;
             padding: 25px;
@@ -171,23 +167,22 @@
 
         .article-card:hover {
             transform: translateY(-5px);
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(40, 40, 40, 0.8);
             border-color: #00d2ff;
         }
 
-        .article-title { font-size: 1.4rem; font-weight: bold; margin-bottom: 10px; color: #fff; }
-        .article-desc { color: #ccc; font-size: 0.95rem; line-height: 1.6; margin-bottom: 15px; }
+        .article-title { font-size: 1.4rem; font-weight: bold; margin-bottom: 10px; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+        .article-desc { color: #ddd; font-size: 0.95rem; line-height: 1.6; margin-bottom: 15px; }
 
         .article-meta {
             display: flex;
             justify-content: space-between;
             font-size: 0.8rem;
-            color: #888;
+            color: #aaa;
         }
 
-        .tag { color: #00d2ff; background: rgba(0, 210, 255, 0.1); padding: 2px 8px; border-radius: 4px; }
+        .tag { color: #00d2ff; background: rgba(0, 210, 255, 0.15); padding: 2px 8px; border-radius: 4px; }
 
-        /* 移动端适配 */
         @media (max-width: 768px) {
             .layout-container.active {
                 flex-direction: column;
@@ -205,8 +200,6 @@
     </style>
 </head>
 <body>
-
-<div id="particles-js"></div>
 
 <div class="layout-container" id="main-layout">
 
@@ -249,32 +242,17 @@
     </aside>
 
     <main id="article-section">
-        <h2 style="margin-bottom: 20px; font-size: 1.5rem; border-left: 4px solid #00d2ff; padding-left: 10px;">最新博客</h2>
+        <h2 style="margin-bottom: 20px; font-size: 1.5rem; border-left: 4px solid #00d2ff; padding-left: 10px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">最新博客</h2>
         <div id="article-list-container">
         </div>
     </main>
 
 </div>
 
-<script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
 <script>
     const GITHUB_USERNAME = "nasamio";
 
-    // --- 1. 粒子背景 ---
-    particlesJS("particles-js", {
-        "particles": {
-            "number": { "value": 60 },
-            "color": { "value": "#ffffff" },
-            "size": { "value": 3 },
-            "line_linked": { "enable": true, "opacity": 0.3 },
-            "move": { "speed": 2 }
-        },
-        "interactivity": {
-            "events": { "onhover": { "enable": true, "mode": "repulse" }, "onclick": { "enable": true, "mode": "push" } }
-        }
-    });
-
-    // --- 2. 打字机 ---
+    // --- 1. 打字机 ---
     const texts = ["Kotlin Developer", "Compose Magic", "Hello World!"];
     let count = 0, index = 0, currentText = "", letter = "";
     (function type() {
@@ -289,7 +267,7 @@
         }
     })();
 
-    // --- 3. 核心功能：布局切换动画 ---
+    // --- 2. 核心功能：布局切换动画 ---
     let isLayoutActive = false;
 
     function activateLayout() {
@@ -299,16 +277,14 @@
         const layout = document.getElementById('main-layout');
         layout.classList.add('active');
 
-        // 渲染文章列表
         renderFakeArticles();
     }
 
-    // 提供一个手动点击触发的方法 (备用)
     function forceActivateLayout() {
         activateLayout();
     }
 
-    // --- 4. 生成假数据文章 ---
+    // --- 3. 生成假数据文章 ---
     function renderFakeArticles() {
         const articles = [
             {
@@ -350,9 +326,8 @@
         ];
 
         const container = document.getElementById('article-list-container');
-        container.innerHTML = ""; // 清空
+        container.innerHTML = "";
 
-        // 逐个插入，带一点延迟动画
         articles.forEach((art, i) => {
             setTimeout(() => {
                 const html = `
@@ -366,11 +341,11 @@
                         </div>
                     `;
                 container.innerHTML += html;
-            }, i * 200); // 阶梯式渲染
+            }, i * 200);
         });
     }
 
-    // --- 5. 数据加载与自动触发 ---
+    // --- 4. 数据加载 ---
     async function loadData() {
         try {
             // GitHub
@@ -393,7 +368,6 @@
         } catch (e) {
             console.log(e);
         } finally {
-            // 核心逻辑：无论数据成功与否，等待 1.5秒 后触发动画
             setTimeout(() => {
                 activateLayout();
             }, 1500);
@@ -401,7 +375,6 @@
     }
 
     loadData();
-
 </script>
 </body>
 </html>
