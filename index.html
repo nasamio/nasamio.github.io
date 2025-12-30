@@ -291,31 +291,30 @@
         if (isLayoutActive) return;
         isLayoutActive = true;
         document.getElementById('main-layout').classList.add('active');
-        loadArticles(); // 激活时加载文章
+        loadArticles();
     }
 
     function forceActivateLayout() {
         activateLayout();
     }
 
-    // --- 3. 文章加载系统 (核心修改) ---
+    // --- 3. 文章加载系统 ---
     async function loadArticles() {
         const wrapper = document.getElementById('list-wrapper');
         wrapper.innerHTML = '<div style="text-align:center; padding:20px;">Loading posts...</div>';
 
         try {
-            // 读取 posts/manifest.json
             const res = await fetch('posts/manifest.json');
             if (!res.ok) throw new Error("Failed to load manifest");
 
             const articles = await res.json();
-            wrapper.innerHTML = ""; // 清空
+            wrapper.innerHTML = "";
 
             articles.forEach((art, i) => {
                 const el = document.createElement('div');
                 el.className = 'article-card';
                 el.style.animation = `fadeIn 0.5s ease ${i * 0.1}s forwards`;
-                el.style.opacity = '0'; // 配合动画
+                el.style.opacity = '0';
                 el.innerHTML = `
                     <div class="article-title">${art.title}</div>
                     <div class="article-desc">${art.desc}</div>
@@ -324,90 +323,81 @@
                         <span class="tag"># ${art.tag}</span>
                     </div>
                 `;
-                // 点击事件：加载 Markdown 文件
                 el.onclick = () => loadMarkdown(art.file);
                 wrapper.appendChild(el);
             });
         } catch (e) {
             console.error(e);
-            wrapper.innerHTML = '<div style="text-align:center; color:#ff6b6b;">Failed to load article list. <br> Please check posts/manifest.json</div>';
+            wrapper.innerHTML = '<div style="text-align:center; color:#ff6b6b;">Failed to load article list.</div>';
         }
     }
 
-    // --- 4. Markdown 渲染逻辑 (调试增强版 + 分段编码修复) ---
+    // --- 4. Markdown 渲染逻辑 (双核修复版：同时支持 Markdown 和 HTML 格式) ---
     async function loadMarkdown(filePath) {
         const viewer = document.getElementById('markdown-viewer');
         const listContainer = document.getElementById('article-list-container');
         const detailContainer = document.getElementById('article-detail');
 
-        // 切换视图
         listContainer.style.display = 'none';
         detailContainer.style.display = 'block';
-        viewer.innerHTML = '<div style="padding:20px;">Loading content... (Debug Mode)</div>';
-
-        console.group(`[Debug] Loading File: ${filePath}`); // 开启控制台分组
+        viewer.innerHTML = '<div style="padding:20px;">Loading content...</div>';
 
         try {
             const res = await fetch(filePath);
             if (!res.ok) throw new Error("File not found: " + res.status);
             let text = await res.text();
 
-            // 1. 获取基础目录 (例如: posts/[CMP] 1.构建项目/)
+            // 计算基础路径 (例如: posts/[CMP] 1.构建项目/)
             const lastSlashIndex = filePath.lastIndexOf('/');
             const basePath = filePath.substring(0, lastSlashIndex + 1);
-            console.log("Base Path calculated:", basePath);
 
-            // 2. 正则替换 + 详细日志
-            text = text.replace(/!\[(.*?)\]\((?!http)(.*?)\)/g, (match, alt, fullSrc) => {
+            console.log(`[Debug] Processing: ${filePath}`);
+            console.log(`[Debug] BasePath: ${basePath}`);
 
-                // 处理可能存在的图片标题，例如: image.png "My Title"
-                let src = fullSrc.trim();
+            // --- Helper: 路径统一处理函数 ---
+            // 负责把 "image.png" 变成 "posts/.../image.png" 并进行安全编码
+            const fixPath = (src) => {
+                src = src.trim();
+                // 如果已经是网络图片(http)或绝对路径(/)，直接跳过
+                if (src.startsWith('http') || src.startsWith('//') || src.startsWith('data:')) return src;
+
+                const rawFullPath = basePath + src;
+                // 分段编码，完美处理 [ ] ( ) 等特殊字符
+                return rawFullPath.split('/').map(segment => encodeURIComponent(segment)).join('/');
+            };
+
+            // --- Pass 1: 修复标准 Markdown 图片 ![]() ---
+            text = text.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, src) => {
+                // 分离可能存在的标题 (src "title")
                 let title = "";
-
-                // 简单的标题分离逻辑
-                // 如果 src 里有空格，且后面跟着引号，可能是标题
                 const titleMatch = src.match(/^(\S+)\s+(["'].*["'])$/);
                 if (titleMatch) {
                     src = titleMatch[1];
-                    title = " " + titleMatch[2]; // 保留标题部分用于拼接
+                    title = " " + titleMatch[2];
                 }
 
-                console.log(`--- Image Found ---`);
-                console.log(`Original: ${match}`);
-                console.log(`Alt: ${alt}`);
-                console.log(`Raw Src: ${src}`);
-                console.log(`Title detected: ${title}`);
-
-                // 3. 构建并分段编码 (最稳妥的方式)
-                // 先拼接完整路径
-                const rawFullPath = basePath + src;
-
-                // 按 '/' 切割，对每一段单独进行 encodeURIComponent
-                // 这样能完美处理 [ ] # ? 等所有特殊字符，且不会破坏路径结构
-                const encodedPath = rawFullPath.split('/').map(segment => {
-                    return encodeURIComponent(segment);
-                }).join('/');
-
-                console.log(`Final URL: ${encodedPath}`);
-
-                // 返回 Markdown 标准格式
-                return `![${alt}](${encodedPath}${title})`;
+                const newSrc = fixPath(src);
+                return `![${alt}](${newSrc}${title})`;
             });
 
-            // 3. 解析
+            // --- Pass 2: 修复 HTML 图片标签 <img src="..."> ---
+            // 这就是之前漏掉的部分！
+            text = text.replace(/<img\s+([^>]*?)src=["'](.*?)["']([^>]*?)>/gi, (match, pre, src, post) => {
+                const newSrc = fixPath(src);
+                console.log(`[Debug HTML Fix] ${src} -> ${newSrc}`);
+                return `<img ${pre} src="${newSrc}" ${post}>`;
+            });
+
+            // 解析并高亮
             viewer.innerHTML = marked.parse(text);
             hljs.highlightAll();
-            console.log("Markdown parsing complete.");
 
         } catch (e) {
-            console.error("Load Error:", e);
+            console.error(e);
             viewer.innerHTML = `<div style="color:#ff6b6b; padding:20px;">
                 <h3>Error</h3>
                 <p>${e.message}</p>
-                <p>请按 F12 打开控制台查看详细日志。</p>
             </div>`;
-        } finally {
-            console.groupEnd();
         }
     }
 
@@ -416,7 +406,7 @@
         document.getElementById('article-detail').style.display = 'none';
     }
 
-    // --- 5. 数据加载 (GitHub & Hitokoto) ---
+    // --- 5. 数据加载 ---
     async function loadData() {
         try {
             const gitRes = await fetch(`https://api.github.com/users/${GITHUB_USERNAME}`);
@@ -437,7 +427,6 @@
         } catch (e) {
             console.log(e);
         } finally {
-            // 延迟一点自动进入，或者等待用户点击
             setTimeout(() => {
                 activateLayout();
             }, 1500);
