@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nasamio's Space</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+
     <style>
         /* --- 基础设置 --- */
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -19,10 +21,6 @@
             height: 100vh;
             overflow-x: hidden;
             position: relative;
-
-            /* --- 这里修改背景图 --- */
-            /* 1. background-image: 这里的 URL 可以换成您仓库里的图片路径，例如 './bg.jpg' */
-            /* 2. background-attachment: fixed; 确保滚动时图片不动 */
             background-image: url('https://s2.loli.net/2025/12/26/fGk6NP8I15eEqDh.jpg');
             background-size: cover;
             background-position: center;
@@ -31,13 +29,12 @@
         }
 
         /* --- 黑色遮罩层 --- */
-        /* 为了防止背景图太亮导致文字看不清，加一层半透明黑膜 */
         body::before {
             content: "";
-            position: fixed; /* 也是固定的 */
+            position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            background: rgba(15, 12, 41, 0.7); /* 0.7 是透明度 */
+            background: rgba(15, 12, 41, 0.7);
             z-index: -1;
         }
 
@@ -60,20 +57,18 @@
             gap: 40px;
         }
 
-        /* --- 玻璃拟态卡片 --- */
+        /* --- 侧边栏卡片 --- */
         .glass-card {
-            background: rgba(255, 255, 255, 0.05); /* 更加通透一点 */
-            backdrop-filter: blur(15px); /* 毛玻璃模糊度加强 */
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
             border-radius: 20px;
             border: 1px solid rgba(255, 255, 255, 0.15);
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
             padding: 40px;
-
             width: 100%;
             max-width: 600px;
             text-align: center;
-
             transition: all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
             flex-shrink: 0;
             position: relative;
@@ -85,7 +80,7 @@
             padding: 30px 20px;
             position: sticky;
             top: 40px;
-            background: rgba(0, 0, 0, 0.3); /* 侧边栏模式稍微深一点 */
+            background: rgba(0, 0, 0, 0.3);
         }
 
         .layout-container.active .avatar { width: 80px; height: 80px; border-width: 2px; }
@@ -138,24 +133,26 @@
         .social-links a { color: white; font-size: 1.2rem; margin: 0 10px; transition: 0.3s; }
         .social-links a:hover { color: #00d2ff; }
 
-        /* --- 文章列表区域 --- */
-        #article-section {
+        /* --- 主内容区域 --- */
+        #content-area {
             flex-grow: 1;
             display: none;
             opacity: 0;
             transform: translateY(50px);
             transition: all 0.8s ease;
             max-width: 800px;
+            width: 100%;
         }
 
-        .layout-container.active #article-section {
+        .layout-container.active #content-area {
             display: block;
             opacity: 1;
             transform: translateY(0);
         }
 
+        /* --- 列表视图 --- */
         .article-card {
-            background: rgba(20, 20, 20, 0.6); /* 稍微深一点的背景，增加对比度 */
+            background: rgba(20, 20, 20, 0.6);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 15px;
@@ -173,48 +170,62 @@
 
         .article-title { font-size: 1.4rem; font-weight: bold; margin-bottom: 10px; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
         .article-desc { color: #ddd; font-size: 0.95rem; line-height: 1.6; margin-bottom: 15px; }
-
-        .article-meta {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.8rem;
-            color: #aaa;
-        }
-
+        .article-meta { display: flex; justify-content: space-between; font-size: 0.8rem; color: #aaa; }
         .tag { color: #00d2ff; background: rgba(0, 210, 255, 0.15); padding: 2px 8px; border-radius: 4px; }
 
+        /* --- 详情视图 (Markdown渲染区) --- */
+        #article-detail {
+            display: none;
+            background: rgba(20, 20, 20, 0.85);
+            backdrop-filter: blur(15px);
+            border-radius: 15px;
+            padding: 40px;
+            border: 1px solid rgba(255,255,255,0.1);
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #00d2ff;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: 0.3s;
+        }
+        .back-btn:hover { text-decoration: underline; }
+
+        /* Markdown 内容样式 */
+        .markdown-body h1 { border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-bottom: 20px; font-size: 2em; }
+        .markdown-body h2 { margin-top: 30px; margin-bottom: 15px; color: #eee; font-size: 1.5em; }
+        .markdown-body p { margin-bottom: 16px; line-height: 1.8; color: #ddd; }
+        .markdown-body code { background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', monospace; color: #ff7b72; }
+        .markdown-body pre { background: #282c34; padding: 15px; border-radius: 8px; overflow-x: auto; margin-bottom: 20px; }
+        .markdown-body pre code { background: transparent; padding: 0; color: inherit; }
+        .markdown-body ul, .markdown-body ol { margin-left: 20px; margin-bottom: 16px; color: #ddd; }
+        .markdown-body blockquote { border-left: 4px solid #00d2ff; padding-left: 15px; color: #aaa; margin-bottom: 16px; }
+        .markdown-body img { max-width: 100%; border-radius: 8px; margin: 10px 0; }
+
         @media (max-width: 768px) {
-            .layout-container.active {
-                flex-direction: column;
-                align-items: center;
-                padding-top: 20px;
-            }
-            .layout-container.active .glass-card {
-                position: relative;
-                top: 0;
-                width: 100%;
-                max-width: 100%;
-            }
-            #article-section { width: 100%; }
+            .layout-container.active { flex-direction: column; align-items: center; padding-top: 20px; }
+            .layout-container.active .glass-card { position: relative; top: 0; width: 100%; max-width: 100%; }
+            #content-area { width: 100%; }
         }
     </style>
 </head>
 <body>
 
 <div class="layout-container" id="main-layout">
-
     <aside class="glass-card" onclick="forceActivateLayout()">
         <img id="github-avatar" src="https://github.com/github.png" alt="Avatar" class="avatar">
-
         <h1 id="github-name">Nasamio</h1>
         <div class="typing-text" id="typing-text"></div>
-
         <div class="skills">
             <span class="skill-tag">Kotlin</span>
             <span class="skill-tag">Compose</span>
             <span class="skill-tag">Android</span>
         </div>
-
         <div class="stats-grid">
             <div class="stat-item">
                 <div class="stat-number" id="repo-count">-</div>
@@ -229,28 +240,36 @@
                 <div class="stat-label">Year</div>
             </div>
         </div>
-
         <div class="quote-section">
             <p id="hitokoto-text" style="margin-bottom:5px">Loading...</p>
             <p id="hitokoto-author" style="text-align:right; color:#aaa; font-size:0.8em"></p>
         </div>
-
         <div class="social-links" style="margin-top: 20px;">
             <a href="https://github.com/nasamio" target="_blank" id="git-link"><i class="fab fa-github"></i></a>
             <a href="mailto:nasamio@163.com"><i class="fas fa-envelope"></i></a>
         </div>
     </aside>
 
-    <main id="article-section">
-        <h2 style="margin-bottom: 20px; font-size: 1.5rem; border-left: 4px solid #00d2ff; padding-left: 10px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">最新博客</h2>
+    <main id="content-area">
         <div id="article-list-container">
+            <h2 style="margin-bottom: 20px; font-size: 1.5rem; border-left: 4px solid #00d2ff; padding-left: 10px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">最新博客</h2>
+            <div id="list-wrapper"></div>
+        </div>
+
+        <div id="article-detail">
+            <div class="back-btn" onclick="showList()"><i class="fas fa-arrow-left"></i> 返回列表</div>
+            <div id="markdown-viewer" class="markdown-body"></div>
         </div>
     </main>
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+
 <script>
     const GITHUB_USERNAME = "nasamio";
+    let isLayoutActive = false;
 
     // --- 1. 打字机 ---
     const texts = ["Kotlin Developer", "Compose Magic", "Hello World!"];
@@ -267,88 +286,139 @@
         }
     })();
 
-    // --- 2. 核心功能：布局切换动画 ---
-    let isLayoutActive = false;
-
+    // --- 2. 布局控制 ---
     function activateLayout() {
         if (isLayoutActive) return;
         isLayoutActive = true;
-
-        const layout = document.getElementById('main-layout');
-        layout.classList.add('active');
-
-        renderFakeArticles();
+        document.getElementById('main-layout').classList.add('active');
+        loadArticles(); // 激活时加载文章
     }
 
     function forceActivateLayout() {
         activateLayout();
     }
 
-    // --- 3. 生成假数据文章 ---
-    function renderFakeArticles() {
-        const articles = [
-            {
-                title: "使用 Jetpack Compose 构建跨平台桌面应用",
-                desc: "探讨 Compose Multiplatform 在 Desktop 端的实际应用，从窗口管理到原生 API 调用。",
-                date: "2025-12-24",
-                tag: "Compose Desktop"
-            },
-            {
-                title: "Kotlin 协程最佳实践指南",
-                desc: "深入理解 CoroutineScope、SupervisorJob 以及 Flow 在 Android 开发中的异常处理机制。",
-                date: "2025-12-20",
-                tag: "Kotlin"
-            },
-            {
-                title: "重构：从 View 体系迁移到 Compose",
-                desc: "记录一个老旧 Android 项目完全迁移到 Compose 的心路历程与踩坑实录。",
-                date: "2025-12-15",
-                tag: "Android"
-            },
-            {
-                title: "自定义 View 进阶：Canvas 粒子特效",
-                desc: "如何在 Android Canvas 上高性能绘制 5000+ 粒子动画并保持 60fps。",
-                date: "2025-12-10",
-                tag: "UI/UX"
-            },
-            {
-                title: "Ktor + Docker：快速部署微服务",
-                desc: "使用纯 Kotlin 技术栈编写后端服务，并使用 Docker 容器化部署到云服务器。",
-                date: "2025-12-05",
-                tag: "Backend"
-            },
-            {
-                title: "S57 电子海图解析初探",
-                desc: "基于 Kotlin 解析 S57 格式标准，绘制基础的矢量海图数据。",
-                date: "2025-12-01",
-                tag: "Map"
-            }
-        ];
+    // --- 3. 文章加载系统 (核心修改) ---
+    async function loadArticles() {
+        const wrapper = document.getElementById('list-wrapper');
+        wrapper.innerHTML = '<div style="text-align:center; padding:20px;">Loading posts...</div>';
 
-        const container = document.getElementById('article-list-container');
-        container.innerHTML = "";
+        try {
+            // 读取 posts/manifest.json
+            const res = await fetch('posts/manifest.json');
+            if (!res.ok) throw new Error("Failed to load manifest");
 
-        articles.forEach((art, i) => {
-            setTimeout(() => {
-                const html = `
-                        <div class="article-card">
-                            <div class="article-title">${art.title}</div>
-                            <div class="article-desc">${art.desc}</div>
-                            <div class="article-meta">
-                                <span><i class="far fa-calendar-alt"></i> ${art.date}</span>
-                                <span class="tag"># ${art.tag}</span>
-                            </div>
-                        </div>
-                    `;
-                container.innerHTML += html;
-            }, i * 200);
-        });
+            const articles = await res.json();
+            wrapper.innerHTML = ""; // 清空
+
+            articles.forEach((art, i) => {
+                const el = document.createElement('div');
+                el.className = 'article-card';
+                el.style.animation = `fadeIn 0.5s ease ${i * 0.1}s forwards`;
+                el.style.opacity = '0'; // 配合动画
+                el.innerHTML = `
+                    <div class="article-title">${art.title}</div>
+                    <div class="article-desc">${art.desc}</div>
+                    <div class="article-meta">
+                        <span><i class="far fa-calendar-alt"></i> ${art.date}</span>
+                        <span class="tag"># ${art.tag}</span>
+                    </div>
+                `;
+                // 点击事件：加载 Markdown 文件
+                el.onclick = () => loadMarkdown(art.file);
+                wrapper.appendChild(el);
+            });
+        } catch (e) {
+            console.error(e);
+            wrapper.innerHTML = '<div style="text-align:center; color:#ff6b6b;">Failed to load article list. <br> Please check posts/manifest.json</div>';
+        }
     }
 
-    // --- 4. 数据加载 ---
+    // --- 4. Markdown 渲染逻辑 (调试增强版 + 分段编码修复) ---
+    async function loadMarkdown(filePath) {
+        const viewer = document.getElementById('markdown-viewer');
+        const listContainer = document.getElementById('article-list-container');
+        const detailContainer = document.getElementById('article-detail');
+
+        // 切换视图
+        listContainer.style.display = 'none';
+        detailContainer.style.display = 'block';
+        viewer.innerHTML = '<div style="padding:20px;">Loading content... (Debug Mode)</div>';
+
+        console.group(`[Debug] Loading File: ${filePath}`); // 开启控制台分组
+
+        try {
+            const res = await fetch(filePath);
+            if (!res.ok) throw new Error("File not found: " + res.status);
+            let text = await res.text();
+
+            // 1. 获取基础目录 (例如: posts/[CMP] 1.构建项目/)
+            const lastSlashIndex = filePath.lastIndexOf('/');
+            const basePath = filePath.substring(0, lastSlashIndex + 1);
+            console.log("Base Path calculated:", basePath);
+
+            // 2. 正则替换 + 详细日志
+            text = text.replace(/!\[(.*?)\]\((?!http)(.*?)\)/g, (match, alt, fullSrc) => {
+
+                // 处理可能存在的图片标题，例如: image.png "My Title"
+                let src = fullSrc.trim();
+                let title = "";
+
+                // 简单的标题分离逻辑
+                // 如果 src 里有空格，且后面跟着引号，可能是标题
+                const titleMatch = src.match(/^(\S+)\s+(["'].*["'])$/);
+                if (titleMatch) {
+                    src = titleMatch[1];
+                    title = " " + titleMatch[2]; // 保留标题部分用于拼接
+                }
+
+                console.log(`--- Image Found ---`);
+                console.log(`Original: ${match}`);
+                console.log(`Alt: ${alt}`);
+                console.log(`Raw Src: ${src}`);
+                console.log(`Title detected: ${title}`);
+
+                // 3. 构建并分段编码 (最稳妥的方式)
+                // 先拼接完整路径
+                const rawFullPath = basePath + src;
+
+                // 按 '/' 切割，对每一段单独进行 encodeURIComponent
+                // 这样能完美处理 [ ] # ? 等所有特殊字符，且不会破坏路径结构
+                const encodedPath = rawFullPath.split('/').map(segment => {
+                    return encodeURIComponent(segment);
+                }).join('/');
+
+                console.log(`Final URL: ${encodedPath}`);
+
+                // 返回 Markdown 标准格式
+                return `![${alt}](${encodedPath}${title})`;
+            });
+
+            // 3. 解析
+            viewer.innerHTML = marked.parse(text);
+            hljs.highlightAll();
+            console.log("Markdown parsing complete.");
+
+        } catch (e) {
+            console.error("Load Error:", e);
+            viewer.innerHTML = `<div style="color:#ff6b6b; padding:20px;">
+                <h3>Error</h3>
+                <p>${e.message}</p>
+                <p>请按 F12 打开控制台查看详细日志。</p>
+            </div>`;
+        } finally {
+            console.groupEnd();
+        }
+    }
+
+    function showList() {
+        document.getElementById('article-list-container').style.display = 'block';
+        document.getElementById('article-detail').style.display = 'none';
+    }
+
+    // --- 5. 数据加载 (GitHub & Hitokoto) ---
     async function loadData() {
         try {
-            // GitHub
             const gitRes = await fetch(`https://api.github.com/users/${GITHUB_USERNAME}`);
             if (gitRes.ok) {
                 const data = await gitRes.json();
@@ -359,7 +429,6 @@
                 document.getElementById('git-link').href = data.html_url;
             }
 
-            // Hitokoto
             const hitoRes = await fetch('https://v1.hitokoto.cn/?c=i&c=d');
             const hitoData = await hitoRes.json();
             document.getElementById('hitokoto-text').textContent = hitoData.hitokoto;
@@ -368,6 +437,7 @@
         } catch (e) {
             console.log(e);
         } finally {
+            // 延迟一点自动进入，或者等待用户点击
             setTimeout(() => {
                 activateLayout();
             }, 1500);
