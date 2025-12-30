@@ -6,6 +6,7 @@
     <title>Nasamio's Space</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/viewerjs/1.11.6/viewer.min.css">
 
     <style>
         /* --- 基础设置 --- */
@@ -205,7 +206,17 @@
         .markdown-body pre code { background: transparent; padding: 0; color: inherit; }
         .markdown-body ul, .markdown-body ol { margin-left: 20px; margin-bottom: 16px; color: #ddd; }
         .markdown-body blockquote { border-left: 4px solid #00d2ff; padding-left: 15px; color: #aaa; margin-bottom: 16px; }
-        .markdown-body img { max-width: 100%; border-radius: 8px; margin: 10px 0; }
+        /* 图片样式调整：默认可以显示鼠标手型，提示可点击 */
+        .markdown-body img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin: 10px 0;
+            cursor: zoom-in; /* 提示用户可以缩放 */
+            transition: opacity 0.3s;
+        }
+        .markdown-body img:hover {
+            opacity: 0.9;
+        }
 
         @media (max-width: 768px) {
             .layout-container.active { flex-direction: column; align-items: center; padding-top: 20px; }
@@ -266,10 +277,14 @@
 
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/viewerjs/1.11.6/viewer.min.js"></script>
 
 <script>
     const GITHUB_USERNAME = "nasamio";
     let isLayoutActive = false;
+
+    // [新增] 全局变量，用于存储图片查看器实例
+    let galleryViewer = null;
 
     // --- 1. 打字机 ---
     const texts = ["Kotlin Developer", "Compose Magic", "Hello World!"];
@@ -332,30 +347,34 @@
         }
     }
 
-    // --- 4. Markdown 渲染逻辑 (双核修复版：同时支持 Markdown 和 HTML 格式) ---
+    // --- 4. Markdown 渲染逻辑 (双核修复 + 图片查看器集成) ---
     async function loadMarkdown(filePath) {
         const viewer = document.getElementById('markdown-viewer');
         const listContainer = document.getElementById('article-list-container');
         const detailContainer = document.getElementById('article-detail');
 
+        // 切换视图
         listContainer.style.display = 'none';
         detailContainer.style.display = 'block';
         viewer.innerHTML = '<div style="padding:20px;">Loading content...</div>';
+
+        // [核心] 销毁旧的查看器实例（如果有），防止内存泄漏
+        if (galleryViewer) {
+            galleryViewer.destroy();
+        }
 
         try {
             const res = await fetch(filePath);
             if (!res.ok) throw new Error("File not found: " + res.status);
             let text = await res.text();
 
-            // 计算基础路径 (例如: posts/[CMP] 1.构建项目/)
+            // 计算基础路径
             const lastSlashIndex = filePath.lastIndexOf('/');
             const basePath = filePath.substring(0, lastSlashIndex + 1);
 
             console.log(`[Debug] Processing: ${filePath}`);
-            console.log(`[Debug] BasePath: ${basePath}`);
 
             // --- Helper: 路径统一处理函数 ---
-            // 负责把 "image.png" 变成 "posts/.../image.png" 并进行安全编码
             const fixPath = (src) => {
                 src = src.trim();
                 // 如果已经是网络图片(http)或绝对路径(/)，直接跳过
@@ -368,29 +387,41 @@
 
             // --- Pass 1: 修复标准 Markdown 图片 ![]() ---
             text = text.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, src) => {
-                // 分离可能存在的标题 (src "title")
                 let title = "";
                 const titleMatch = src.match(/^(\S+)\s+(["'].*["'])$/);
                 if (titleMatch) {
                     src = titleMatch[1];
                     title = " " + titleMatch[2];
                 }
-
                 const newSrc = fixPath(src);
                 return `![${alt}](${newSrc}${title})`;
             });
 
             // --- Pass 2: 修复 HTML 图片标签 <img src="..."> ---
-            // 这就是之前漏掉的部分！
             text = text.replace(/<img\s+([^>]*?)src=["'](.*?)["']([^>]*?)>/gi, (match, pre, src, post) => {
                 const newSrc = fixPath(src);
-                console.log(`[Debug HTML Fix] ${src} -> ${newSrc}`);
                 return `<img ${pre} src="${newSrc}" ${post}>`;
             });
 
             // 解析并高亮
             viewer.innerHTML = marked.parse(text);
             hljs.highlightAll();
+
+            // [新增] 初始化 Viewer.js 图片查看器
+            // 扫描 markdown-viewer 内的所有图片，启用点击放大
+            galleryViewer = new Viewer(viewer, {
+                navbar: false,       // 隐藏底部略缩图导航
+                toolbar: {           // 自定义工具栏
+                    zoomIn: 1,
+                    zoomOut: 1,
+                    oneToOne: 1,     // 1:1 比例
+                    reset: 1,        // 重置
+                    rotateLeft: 1,   // 旋转
+                    rotateRight: 1,
+                },
+                title: false,        // 不显示图片文件名
+                transition: true,    // 开启过渡动画
+            });
 
         } catch (e) {
             console.error(e);
